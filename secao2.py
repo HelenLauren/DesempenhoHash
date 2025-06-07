@@ -5,41 +5,50 @@
 import time
 import hashlib
 import itertools
-import concurrent.futures
-import os
+import json
 
-#função de hash
 def hash_sha256(s):
     return hashlib.sha256(s.encode()).hexdigest()
 
-#função de tentativa de combinação
-def attempt_match(length, target_hash):
-    for attempt in itertools.product("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzç0123456789!@#$%&*_-?", repeat=length):
-        attempt_str = "".join(attempt)
-        if hash_sha256(attempt_str) == target_hash:
-            print("Senha encontrada:", attempt_str)
-            return attempt_str
+def brute_force(hash_alvo):
+    charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    for tentativa in itertools.product(charset, repeat=4):  #senhas de 4 caracteres
+        tentativa_str = ''.join(tentativa)
+        if hash_sha256(tentativa_str) == hash_alvo:
+            return tentativa_str
     return None
 
-if __name__ == '__main__':
-    target_password = input("Digite a senha a ser descoberta: ")
-    target_hash = hash_sha256(target_password)
+# Carrega usuários do JSON
+with open('usuarios.json', 'r', encoding='utf-8') as f:
+    usuarios = json.load(f)
 
-    total_cores = os.cpu_count()
-    num_cores = max(1, total_cores // 2)  #usa apenas metade dos núcleos disponíveis
+tempos = []
 
-    print(f"\nNúcleos disponíveis: {total_cores}")
-    print(f"Usando {num_cores} núcleo(s) para processamento...\n")
+print("🔐 Iniciando quebra de até 4 usuários...\n")
 
-    start_time = time.perf_counter()
+for i, (nome, dados) in enumerate(usuarios.items()):
+    if i >= 4:
+        break
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=num_cores) as executor:
-        futures = [executor.submit(attempt_match, length, target_hash) for length in range(1, 5)]
+    hash_salvo = dados['senha']
+    print(f"Usuário: {nome}")
+    print(f"Hash: {hash_salvo}")
 
-        for future in concurrent.futures.as_completed(futures):
-            result = future.result()
-            if result:
-                break
+    inicio = time.time()
+    senha = brute_force(hash_salvo)
+    fim = time.time()
 
-    end_time = time.perf_counter()
-    print(f"\nTempo de execução: {end_time - start_time:.2f} segundos")
+    if senha:
+        print(f" Senha encontrada: {senha}")
+    else:
+        print("Senha não encontrada.")
+
+    duracao = fim - inicio
+    tempos.append(duracao)
+    print(f"⏱ Tempo: {duracao:.2f} segundos\n")
+
+print("📊 Resumo:")
+for i, t in enumerate(tempos):
+    print(f"Usuário {i+1}: {t:.2f} segundos")
+
+print(f"\nTempo total: {sum(tempos):.2f} segundos")

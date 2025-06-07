@@ -1,23 +1,27 @@
 # Seção 3, somativa - Desempenho de Hash Criptográfico
 # Helen Lauren Bonato. BSI 3°período
-# Adicionado o salt que garante que senhas iguais gerem hashes diferentes e pbkdf2_hmac que aplica o hash várias vezes na senha.
+# Validação de senha forte e hash simples com SHA-256
+
 import hashlib
 import json
 import getpass
 import os
-import base64
+import re
 
-#funções de segurança com salt e pbkdf2_hmac
-def gerar_salt():
-    return base64.b64encode(os.urandom(16)).decode()
+def hash_senha(senha):
+    return hashlib.sha256(senha.encode()).hexdigest()
 
-def hash_com_salt(senha, salt, iteracoes=100_000):
-    senha_bytes = senha.encode()
-    salt_bytes = base64.b64decode(salt)
-    hash_bytes = hashlib.pbkdf2_hmac('sha256', senha_bytes, salt_bytes, iteracoes)
-    return base64.b64encode(hash_bytes).decode()
+def validar_senha(senha):
+    if len(senha) < 8:
+        return False, "A senha deve ter no mínimo 8 caracteres."
+    if not re.search(r'[a-z]', senha):
+        return False, "A senha deve conter pelo menos uma letra minúscula."
+    if not re.search(r'[A-Z]', senha):
+        return False, "A senha deve conter pelo menos uma letra maiúscula."
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>_\[\]\\\/\-+=]', senha):
+        return False, "A senha deve conter pelo menos um caractere especial."
+    return True, ""
 
-#carrega e salva dados de um arquivo JSON
 def carregar_dados(nome_arquivo):
     try:
         with open(nome_arquivo, 'r', encoding='utf-8') as arquivo:
@@ -32,10 +36,9 @@ def salvar_dados(nome_arquivo, dados):
 ARQUIVO_USUARIOS = 'usuarios.json'
 ARQUIVO_PERMISSOES = 'permissoes.json'
 
-#carrega os dados
 dados_usuarios = carregar_dados(ARQUIVO_USUARIOS)
 dados_permissoes = carregar_dados(ARQUIVO_PERMISSOES)
-    
+
 class Usuario:
     def __init__(self, nome, senha):
         self.nome = nome
@@ -43,36 +46,34 @@ class Usuario:
 
     def autenticar(self):
         usuario = dados_usuarios.get(self.nome)
-
         if not usuario:
             return False, "Usuário não encontrado."
 
         if usuario.get('bloqueado', False):
-            return False, "🚫 Conta bloqueada permanentemente por excesso de tentativas."
+            return False, "Conta bloqueada permanentemente por excesso de tentativas."
 
         if usuario['senha'] == hash_senha(self.senha):
-            usuario['tentativas'] = 0  #zera as tentativas no login bem-sucedido
+            usuario['tentativas'] = 0
             salvar_dados(ARQUIVO_USUARIOS, dados_usuarios)
             return True, "✅ Autenticado com sucesso!"
         else:
             usuario['tentativas'] = usuario.get('tentativas', 0) + 1
-
             if usuario['tentativas'] >= 3:
                 usuario['bloqueado'] = True
                 salvar_dados(ARQUIVO_USUARIOS, dados_usuarios)
                 return False, "🚫 Conta bloqueada após 3 tentativas inválidas."
-
             salvar_dados(ARQUIVO_USUARIOS, dados_usuarios)
             tentativas_restantes = 3 - usuario['tentativas']
             return False, f"❌ Senha incorreta. Tentativas restantes: {tentativas_restantes}"
 
     def cadastrar(self):
-        if len(self.nome) != 4 or len(self.senha) != 4:
-            print("❗ Nome e senha devem ter exatamente 4 caracteres.")
-            return False
-
         if self.nome in dados_usuarios:
             print("Usuário já existe!")
+            return False
+
+        valida, mensagem = validar_senha(self.senha)
+        if not valida:
+            print(mensagem)
             return False
 
         dados_usuarios[self.nome] = {
@@ -85,10 +86,10 @@ class Usuario:
 
         salvar_dados(ARQUIVO_USUARIOS, dados_usuarios)
         salvar_dados(ARQUIVO_PERMISSOES, dados_permissoes)
-        print("✅ Cadastro realizado com sucesso!")
+        print("Cadastro realizado com sucesso!")
         return True
 
-# menu de login ou cadastro
+# Menu de login ou cadastro
 usuario_autenticado = None
 
 while True:
@@ -110,8 +111,7 @@ while True:
     usuario = Usuario(nome, senha)
 
     if opcao == '1':
-        if usuario.cadastrar():
-            print("✅ Cadastro realizado com sucesso!")
+        usuario.cadastrar()
         continue
 
     autenticado, mensagem = usuario.autenticar()
@@ -120,11 +120,11 @@ while True:
         usuario_autenticado = nome
         break
 
-# menu de permissões
+# Menu de permissões
 if usuario_autenticado:
     while True:
         print("\n" + "="*40)
-        print("📂  MENU DE PERMISSÕES  📂".center(40))
+        print("  MENU DE PERMISSÕES  ".center(40))
         print("\nOPÇÕES:")
         opcao = input("1 - Ler\n2 - Escrever\n3 - Apagar\n4 - Executar\n5 - Consultar arquivos disponíveis permitidos\n0 - Sair\nEscolha: ")
         print("\n" + "="*40)
@@ -139,9 +139,7 @@ if usuario_autenticado:
 
             for acao, arquivos in permissoes_usuario.items():
                 for arquivo in arquivos:
-                    if arquivo not in arquivos_com_permissoes:
-                        arquivos_com_permissoes[arquivo] = []
-                    arquivos_com_permissoes[arquivo].append(acao)
+                    arquivos_com_permissoes.setdefault(arquivo, []).append(acao)
 
             if arquivos_com_permissoes:
                 print("\nArquivos disponíveis e permissões:")

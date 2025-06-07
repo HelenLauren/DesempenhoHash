@@ -38,19 +38,19 @@ class Usuario:
             return False, "Usuário não encontrado."
 
         if usuario.get('bloqueado', False):
-            return False, "🚫 Conta bloqueada permanentemente por excesso de tentativas."
+            return False, "Conta bloqueada permanentemente por excesso de tentativas."
 
         if usuario['senha'] == hash_senha(self.senha):
             usuario['tentativas'] = 0  #zera as tentativas no login bem-sucedido
             salvar_dados(ARQUIVO_USUARIOS, dados_usuarios)
-            return True, "✅ Autenticado com sucesso!"
+            return True, "Autenticado com sucesso!"
         else:
             usuario['tentativas'] = usuario.get('tentativas', 0) + 1
 
             if usuario['tentativas'] >= 3:
                 usuario['bloqueado'] = True
                 salvar_dados(ARQUIVO_USUARIOS, dados_usuarios)
-                return False, "🚫 Conta bloqueada após 3 tentativas inválidas."
+                return False, "Conta bloqueada após 3 tentativas inválidas."
 
             salvar_dados(ARQUIVO_USUARIOS, dados_usuarios)
             tentativas_restantes = 3 - usuario['tentativas']
@@ -58,7 +58,7 @@ class Usuario:
 
     def cadastrar(self):
         if len(self.nome) != 4 or len(self.senha) != 4:
-            print("❗ Nome e senha devem ter exatamente 4 caracteres.")
+            print("Nome e senha devem ter exatamente 4 caracteres.")
             return False
 
         if self.nome in dados_usuarios:
@@ -101,7 +101,7 @@ while True:
 
     if opcao == '1':
         if usuario.cadastrar():
-            print("✅ Cadastro realizado com sucesso!")
+            print("Cadastro realizado com sucesso!")
         continue
 
     autenticado, mensagem = usuario.autenticar()
@@ -114,7 +114,7 @@ while True:
 if usuario_autenticado:
     while True:
         print("\n" + "="*40)
-        print("📂  MENU DE PERMISSÕES  📂".center(40))
+        print(" MENU DE PERMISSÕES ".center(40))
         print("\nOPÇÕES:")
         opcao = input("1 - Ler\n2 - Escrever\n3 - Apagar\n4 - Executar\n5 - Consultar arquivos disponíveis permitidos\n0 - Sair\nEscolha: ")
         print("\n" + "="*40)
