@@ -45,7 +45,7 @@ for i, (nome, dados) in enumerate(usuarios.items()):
 
     duracao = fim - inicio
     tempos.append(duracao)
-    print(f"⏱ Tempo: {duracao:.2f} segundos\n")
+    print(f"Tempo: {duracao:.2f} segundos\n")
 
 print("📊 Resumo:")
 for i, t in enumerate(tempos):

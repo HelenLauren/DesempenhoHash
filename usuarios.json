@@ -1,0 +1,22 @@
+{
+    "hele": {
+        "senha": "c1dc375b8689c322eab10886495667b650d606ecd736a903ab710e402d0f143c",
+        "tentativas": 0,
+        "bloqueado": false
+    },
+    "sara": {
+        "senha": "97a487dc89e80e7292380e23be79bd4fac7156e25561d526c4125465ebf68991",
+        "tentativas": 0,
+        "bloqueado": false
+    },
+    "joao": {
+        "senha": "e0dd684cadbaa86e2af9538d14ad27beb368b855e885c5f0c81dc733083784b0",
+        "tentativas": 0,
+        "bloqueado": false
+    },
+    "lili": {
+        "senha": "7ad67e7a22e1c42c4d084e0ed91137aab0ba06debf42fe9fd9066a0e1c534163",
+        "tentativas": 0,
+        "bloqueado": false
+    }
+}

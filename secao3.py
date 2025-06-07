@@ -1,11 +1,9 @@
 # Seção 3, somativa - Desempenho de Hash Criptográfico
 # Helen Lauren Bonato. BSI 3°período
-# Validação de senha forte e hash simples com SHA-256
-
+# Add validação de senha forte(minimo 8 caracteres, 1 letra maiusca, 1 minuscula, 1 caracter especial) e hash simples com SHA-256
 import hashlib
 import json
 import getpass
-import os
 import re
 
 def hash_senha(senha):
@@ -18,7 +16,7 @@ def validar_senha(senha):
         return False, "A senha deve conter pelo menos uma letra minúscula."
     if not re.search(r'[A-Z]', senha):
         return False, "A senha deve conter pelo menos uma letra maiúscula."
-    if not re.search(r'[!@#$%^&*(),.?":{}|<>_\[\]\\\/\-+=]', senha):
+    if not re.search(r'[!@#$%^&*(),.?\":{}|<>_\\[\\]\\\\/\\-+=]', senha):
         return False, "A senha deve conter pelo menos um caractere especial."
     return True, ""
 
@@ -34,10 +32,7 @@ def salvar_dados(nome_arquivo, dados):
         json.dump(dados, arquivo, indent=4)
 
 ARQUIVO_USUARIOS = 'usuarios.json'
-ARQUIVO_PERMISSOES = 'permissoes.json'
-
 dados_usuarios = carregar_dados(ARQUIVO_USUARIOS)
-dados_permissoes = carregar_dados(ARQUIVO_PERMISSOES)
 
 class Usuario:
     def __init__(self, nome, senha):
@@ -61,10 +56,10 @@ class Usuario:
             if usuario['tentativas'] >= 3:
                 usuario['bloqueado'] = True
                 salvar_dados(ARQUIVO_USUARIOS, dados_usuarios)
-                return False, "🚫 Conta bloqueada após 3 tentativas inválidas."
+                return False, "Conta bloqueada após 3 tentativas inválidas."
             salvar_dados(ARQUIVO_USUARIOS, dados_usuarios)
             tentativas_restantes = 3 - usuario['tentativas']
-            return False, f"❌ Senha incorreta. Tentativas restantes: {tentativas_restantes}"
+            return False, f"Senha incorreta. Tentativas restantes: {tentativas_restantes}"
 
     def cadastrar(self):
         if self.nome in dados_usuarios:
@@ -82,28 +77,24 @@ class Usuario:
             'bloqueado': False
         }
 
-        dados_permissoes[self.nome] = {"ler": [], "escrever": [], "apagar": []}
-
         salvar_dados(ARQUIVO_USUARIOS, dados_usuarios)
-        salvar_dados(ARQUIVO_PERMISSOES, dados_permissoes)
-        print("Cadastro realizado com sucesso!")
+        print("✅ Usuário cadastrado com sucesso!")
         return True
 
-# Menu de login ou cadastro
-usuario_autenticado = None
-
+# Menu principal
 while True:
     print("\n" + "="*40)
     print(" 🔐MENU INICIAL Atividade Somativa Hash Criptográfico".center(40))
     opcao = input("\n1 - Cadastrar\n2 - Entrar\n3 - Sair\nEscolha: ")
     print("\n" + "="*40)
-    if opcao not in ['1', '2', '3']:
-        print("Opção inválida!")
-        continue
 
     if opcao == '3':
         print("Saindo do sistema...")
         break
+
+    if opcao not in ['1', '2']:
+        print("Opção inválida!")
+        continue
 
     nome = input("\n👤 Nome: ")
     senha = getpass.getpass("\033[1;32m🔑 Senha:\033[m ")
@@ -112,53 +103,9 @@ while True:
 
     if opcao == '1':
         usuario.cadastrar()
-        continue
+        continue  # <-- NÃO tenta autenticar após cadastrar
 
     autenticado, mensagem = usuario.autenticar()
     print(mensagem)
     if autenticado:
-        usuario_autenticado = nome
         break
-
-# Menu de permissões
-if usuario_autenticado:
-    while True:
-        print("\n" + "="*40)
-        print("  MENU DE PERMISSÕES  ".center(40))
-        print("\nOPÇÕES:")
-        opcao = input("1 - Ler\n2 - Escrever\n3 - Apagar\n4 - Executar\n5 - Consultar arquivos disponíveis permitidos\n0 - Sair\nEscolha: ")
-        print("\n" + "="*40)
-
-        if opcao == '0':
-            print("Saindo do sistema...")
-            break
-
-        if opcao == '5':
-            permissoes_usuario = dados_permissoes.get(usuario_autenticado, {})
-            arquivos_com_permissoes = {}
-
-            for acao, arquivos in permissoes_usuario.items():
-                for arquivo in arquivos:
-                    arquivos_com_permissoes.setdefault(arquivo, []).append(acao)
-
-            if arquivos_com_permissoes:
-                print("\nArquivos disponíveis e permissões:")
-                for arquivo, acoes in arquivos_com_permissoes.items():
-                    print(f"  📂 {arquivo}: {', '.join(acoes)}")
-            else:
-                print("\nNenhum arquivo disponível.")
-            continue
-
-        tipo_acao = {"1": "ler", "2": "escrever", "3": "apagar", "4": "executar"}.get(opcao)
-        if not tipo_acao:
-            print("Opção inválida!")
-            continue
-
-        arquivo = input("Insira o nome do arquivo que deseja " + tipo_acao + ": ")
-
-        if arquivo in dados_permissoes.get(usuario_autenticado, {}).get(tipo_acao, []):
-            print("Acesso permitido")
-            if opcao == '4':
-                print(f"Executando o arquivo {arquivo}...")
-        else:
-            print("Acesso negado")
